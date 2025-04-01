@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Stream Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.8/hls.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #0ea5e9;
+            --accent-color: #f59e0b;
+            --text-color: #f8fafc;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo h1 {
+            font-size: 1.5rem;
+            color: var(--text-color);
+        }
+        
+        .logo-icon {
+            font-size: 2rem;
+            color: var(--accent-color);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .player-container {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .player-header h2 {
+            font-size: 1.25rem;
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%; /* 16:9 aspect ratio */
+            background-color: #000;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        #videoPlayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .url-input {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .url-input input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 5px;
+            border: 1px solid var(--secondary-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+        
+        button {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: 5px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        button:hover {
+            background-color: #0284c7;
+        }
+        
+        .saved-streams {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .saved-streams h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .streams-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .stream-card {
+            background-color: var(--primary-color);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .stream-title {
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .stream-url {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .stream-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+        }
+        
+        .stream-actions button {
+            padding: 0.5rem;
+            flex: 1;
+            justify-content: center;
+        }
+        
+        .stream-actions button:first-child {
+            margin-right: 0.5rem;
+            background-color: var(--accent-color);
+        }
+        
+        .sport-icons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        
+        .sport-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .sport-icon:hover {
+            transform: translateY(-5px);
+        }
+        
+        .sport-icon i {
+            font-size: 2rem;
+            width: 4rem;
+            height: 4rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--card-bg);
+            border-radius: 50%;
+            color: var(--secondary-color);
+        }
+        
+        .sport-icon span {
+            font-size: 0.8rem;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 500px;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: var(--text-color);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 5px;
+            border: 1px solid var(--secondary-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .error-message {
+            color: #ef4444;
+            margin-top: 0.5rem;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .url-input {
+                flex-direction: column;
+            }
+            
+            .streams-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-cricket logo-icon"></i>
+            <h1>Sports Stream Hub</h1>
+        </div>
+        <button id="addNewStream">
+            <i class="fas fa-plus"></i>
+            Add Stream
+        </button>
+    </header>
+    
+    <div class="container">
+        <div class="sport-icons">
+            <div class="sport-icon" data-sport="football">
+                <i class="fas fa-football-ball"></i>
+                <span>Football</span>
+            </div>
+            <div class="sport-icon" data-sport="cricket">
+                <i class="fas fa-cricket-bat"></i>
+                <span>cricket</span>
+            </div>
+            <div class="sport-icon" data-sport="soccer">
+                <i class="fas fa-futbol"></i>
+                <span>Soccer</span>
+            </div>
+            <div class="sport-icon" data-sport="baseball">
+                <i class="fas fa-baseball-ball"></i>
+                <span>Baseball</span>
+            </div>
+            <div class="sport-icon" data-sport="hockey">
+                <i class="fas fa-hockey-puck"></i>
+                <span>Hockey</span>
+            </div>
+            <div class="sport-icon" data-sport="tennis">
+                <i class="fas fa-table-tennis"></i>
+                <span>Tennis</span>
+            </div>
+            <div class="sport-icon" data-sport="golf">
+                <i class="fas fa-golf-ball"></i>
+                <span>Golf</span>
+            </div>
+            <div class="sport-icon" data-sport="racing">
+                <i class="fas fa-flag-checkered"></i>
+                <span>Racing</span>
+            </div>
+        </div>
+        
+        <div class="player-container">
+            <div class="player-header">
+                <h2 id="currentStreamTitle">Stream Player</h2>
+                <div id="streamType"></div>
+            </div>
+            <div class="video-container">
+                <video id="videoPlayer" controls></video>
+            </div>
+            <div class="url-input">
+                <input type="text" id="streamUrl" placeholder="Enter .m3u8, .ts or embed stream URL">
+                <button id="loadStream">
+                    <i class="fas fa-play"></i>
+                    Load Stream
+                </button>
+            </div>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+        
+        <div class="saved-streams">
+            <h2>
+                <i class="fas fa-bookmark"></i>
+                Saved Streams
+            </h2>
+            <div class="streams-grid" id="savedStreamsContainer">
+                <!-- Saved streams will be displayed here -->
+            </div>
+        </div>
+    </div>
+    
+    <div id="addStreamModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Stream</h2>
+            <div class="form-group">
+                <label for="streamTitleInput">Stream Title</label>
+                <input type="text" id="streamTitleInput" placeholder="Enter stream title">
+            </div>
+            <div class="form-group">
+                <label for="streamUrlInput">Stream URL (.m3u8, .ts or embed)</label>
+                <input type="text" id="streamUrlInput" placeholder="Enter stream URL">
+            </div>
+            <div class="form-group">
+                <label for="sportSelect">Sport Category</label>
+                <select id="sportSelect" style="width: 100%; padding: 0.75rem; border-radius: 5px; border: 1px solid var(--secondary-color); background-color: var(--bg-color); color: var(--text-color);">
+                    <option value="football">Football</option>
+                    <option value="cricket">Cricket</option>
+                    <option value="soccer">Soccer</option>
+                    <option value="baseball">Baseball</option>
+                    <option value="hockey">Hockey</option>
+                    <option value="tennis">Tennis</option>
+                    <option value="golf">Golf</option>
+                    <option value="racing">Racing</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button id="cancelAddStream">Cancel</button>
+                <button id="saveNewStream">
+                    <i class="fas fa-save"></i>
+                    Save Stream
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize variables
+        let savedStreams = [];
+        const videoPlayer = document.getElementById('videoPlayer');
+        const streamUrlInput = document.getElementById('streamUrl');
+        const loadStreamButton = document.getElementById('loadStream');
+        const savedStreamsContainer = document.getElementById('savedStreamsContainer');
+        const currentStreamTitle = document.getElementById('currentStreamTitle');
+        const streamTypeDisplay = document.getElementById('streamType');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        // Modal elements
+        const addStreamModal = document.getElementById('addStreamModal');
+        const addNewStreamButton = document.getElementById('addNewStream');
+        const closeModalButton = document.querySelector('.close');
+        const saveNewStreamButton = document.getElementById('saveNewStream');
+        const cancelAddStreamButton = document.getElementById('cancelAddStream');
+        
+        // Load saved streams from localStorage
+        function loadSavedStreams() {
+            const storedStreams = localStorage.getItem('savedStreams');
+            if (storedStreams) {
+                savedStreams = JSON.parse(storedStreams);
+                displaySavedStreams();
+            }
+        }
+        
+        // Save streams to localStorage
+        function saveStreamsToStorage() {
+            localStorage.setItem('savedStreams', JSON.stringify(savedStreams));
+        }
+        
+        // Display saved streams in the grid
+        function displaySavedStreams() {
+            savedStreamsContainer.innerHTML = '';
+            
+            if (savedStreams.length === 0) {
+                savedStreamsContainer.innerHTML = '<p>No saved streams. Add some streams to see them here.</p>';
+                return;
+            }
+            
+            savedStreams.forEach((stream, index) => {
+                const streamCard = document.createElement('div');
+                streamCard.className = 'stream-card';
+                
+                const sportIcon = getSportIcon(stream.sport || 'other');
+                
+                streamCard.innerHTML = `
+                    <div class="stream-title">${sportIcon} ${stream.title}</div>
+                    <div class="stream-url">${truncateUrl(stream.url)}</div>
+                    <div class="stream-actions">
+                        <button class="play-stream" data-index="${index}">
+                            <i class="fas fa-play"></i>
+                            Play
+                        </button>
+                        <button class="delete-stream" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                            Delete
+                        </button>
+                    </div>
+                `;
+                
+                savedStreamsContainer.appendChild(streamCard);
+            });
+            
+            // Add event listeners to the buttons
+            document.querySelectorAll('.play-stream').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const index = e.currentTarget.dataset.index;
+                    loadStreamFromSaved(index);
+                });
+            });
+            
+            document.querySelectorAll('.delete-stream').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const index = e.currentTarget.dataset.index;
+                    deleteStream(index);
+                });
+            });
+        }
+        
+        // Get icon for sport type
+        function getSportIcon(sport) {
+            const icons = {
+                'football': '<i class="fas fa-football-ball"></i>',
+                'cricket': '<i class="fas fa-cricket-ball"></i>',
+                'soccer': '<i class="fas fa-futbol"></i>',
+                'baseball': '<i class="fas fa-baseball-ball"></i>',
+                'hockey': '<i class="fas fa-hockey-puck"></i>',
+                'tennis': '<i class="fas fa-table-tennis"></i>',
+                'golf': '<i class="fas fa-golf-ball"></i>',
+                'racing': '<i class="fas fa-flag-checkered"></i>',
+                'other': '<i class="fas fa-play-circle"></i>'
+            };
+            
+            return icons[sport] || icons['other'];
+        }
+        
+        // Truncate URL for display
+        function truncateUrl(url) {
+            if (url.length > 40) {
+                return url.substring(0, 37) + '...';
+            }
+            return url;
+        }
+        
+        // Load stream from saved streams
+        function loadStreamFromSaved(index) {
+            const stream = savedStreams[index];
+            streamUrlInput.value = stream.url;
+            currentStreamTitle.textContent = stream.title;
+            loadStream(stream.url);
+        }
+        
+        // Delete stream
+        function deleteStream(index) {
+            if (confirm('Are you sure you want to delete this stream?')) {
+                savedStreams.splice(index, 1);
+                saveStreamsToStorage();
+                displaySavedStreams();
+            }
+        }
+        
+        // Load stream
+        function loadStream(url) {
+            hideError();
+            
+            // Clear previous stream
+            videoPlayer.src = '';
+            videoPlayer.removeAttribute('src');
+            
+            if (!url) {
+                url = streamUrlInput.value.trim();
+            }
+            
+            if (!url) {
+                showError('Please enter a stream URL');
+                return;
+            }
+            
+            // Determine stream type
+            if (url.includes('embed') || url.includes('iframe')) {
+                loadEmbeddedStream(url);
+            } else if (url.endsWith('.m3u8')) {
+                loadHLSStream(url);
+            } else if (url.endsWith('.ts')) {
+                loadTSStream(url);
+            } else {
+                // Try to detect the format
+                if (url.includes('.m3u8')) {
+                    loadHLSStream(url);
+                } else if (url.includes('.ts')) {
+                    loadTSStream(url);
+                } else {
+                    // Default to HLS
+                    loadHLSStream(url);
+                }
+            }
+        }
+        
+        // Load HLS stream (.m3u8)
+        function loadHLSStream(url) {
+            streamTypeDisplay.textContent = 'HLS Stream';
+            
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(videoPlayer);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    videoPlayer.play();
+                });
+                
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        showError(`HLS Error: ${data.type} - ${data.details}`);
+                        hls.destroy();
+                    }
+                });
+            } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+                videoPlayer.src = url;
+                videoPlayer.addEventListener('loadedmetadata', () => {
+                    videoPlayer.play();
+                });
+                videoPlayer.addEventListener('error', () => {
+                    showError('Error loading the HLS stream');
+                });
+            } else {
+                showError('HLS is not supported in your browser');
+            }
+        }
+        
+        // Load TS stream
+        function loadTSStream(url) {
+            streamTypeDisplay.textContent = 'TS Stream';
+            videoPlayer.src = url;
+            videoPlayer.play();
+            
+            videoPlayer.addEventListener('error', () => {
+                showError('Error loading the TS stream');
+            });
+        }
+        
+        // Load embedded stream
+        function loadEmbeddedStream(url) {
+            streamTypeDisplay.textContent = 'Embedded Stream';
+            
+            // Create an iframe and replace the video player
+            const videoContainer = document.querySelector('.video-container');
+            videoContainer.innerHTML = '';
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = url;
+            iframe.style.position = 'absolute';
+            iframe.style.top = '0';
+            iframe.style.left = '0';
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.allow = 'autoplay; fullscreen';
+            
+            videoContainer.appendChild(iframe);
+            
+            // Handle errors
+            iframe.onerror = () => {
+                showError('Error loading the embedded stream');
+            };
+            
+            iframe.onload = () => {
+                hideError();
+            };
+        }
+        
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+        
+        // Hide error message
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+        
+        // Open the add stream modal
+        function openAddStreamModal() {
+            document.getElementById('streamTitleInput').value = '';
+            document.getElementById('streamUrlInput').value = streamUrlInput.value || '';
+            addStreamModal.style.display = 'block';
+        }
+        
+        // Close the add stream modal
+        function closeAddStreamModal() {
+            addStreamModal.style.display = 'none';
+        }
+        
+        // Save new stream
+        function saveNewStream() {
+            const title = document.getElementById('streamTitleInput').value.trim();
+            const url = document.getElementById('streamUrlInput').value.trim();
+            const sport = document.getElementById('sportSelect').value;
+            
+            if (!title) {
+                alert('Please enter a stream title');
+                return;
+            }
+            
+            if (!url) {
+                alert('Please enter a stream URL');
+                return;
+            }
+            
+            const newStream = {
+                title,
+                url,
+                sport,
+                addedAt: new Date().toISOString()
+            };
+            
+            savedStreams.push(newStream);
+            saveStreamsToStorage();
+            displaySavedStreams();
+            closeAddStreamModal();
+        }
+        
+        // Event listeners
+        loadStreamButton.addEventListener('click', () => loadStream());
+        
+        streamUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadStream();
+            }
+        });
+        
+        // Sport icon click event
+        document.querySelectorAll('.sport-icon').forEach(icon => {
+            icon.addEventListener('click', () => {
+                const sport = icon.dataset.sport;
+                // Filter streams by sport
+                const sportStreams = savedStreams.filter(stream => stream.sport === sport);
+                
+                if (sportStreams.length > 0) {
+                    // Show only streams for the selected sport
+                    savedStreamsContainer.innerHTML = '';
+                    
+                    sportStreams.forEach((stream, index) => {
+                        const streamCard = document.createElement('div');
+                        streamCard.className = 'stream-card';
+                        
+                        const sportIcon = getSportIcon(stream.sport);
+                        
+                        streamCard.innerHTML = `
+                            <div class="stream-title">${sportIcon} ${stream.title}</div>
+                            <div class="stream-url">${truncateUrl(stream.url)}</div>
+                            <div class="stream-actions">
+                                <button class="play-stream" data-index="${savedStreams.indexOf(stream)}">
+                                    <i class="fas fa-play"></i>
+                                    Play
+                                </button>
+                                <button class="delete-stream" data-index="${savedStreams.indexOf(stream)}">
+                                    <i class="fas fa-trash"></i>
+                                    Delete
+                                </button>
+                            </div>
+                        `;
+                        
+                        savedStreamsContainer.appendChild(streamCard);
+                    });
+                    
+                    // Add event listeners to the buttons
+                    document.querySelectorAll('.play-stream').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const index = e.currentTarget.dataset.index;
+                            loadStreamFromSaved(index);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.delete-stream').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const index = e.currentTarget.dataset.index;
+                            deleteStream(index);
+                        });
+                    });
+                } else {
+                    alert(`No saved streams for ${sport}. Add some ${sport} streams!`);
+                    displaySavedStreams();
+                }
+            });
+        });
+        
+        // Modal event listeners
+        addNewStreamButton.addEventListener('click', openAddStreamModal);
+        closeModalButton.addEventListener('click', closeAddStreamModal);
+        cancelAddStreamButton.addEventListener('click', closeAddStreamModal);
+        saveNewStreamButton.addEventListener('click', saveNewStream);
+        
+        // Close modal when clicking outside it
+        window.addEventListener('click', (e) => {
+            if (e.target === addStreamModal) {
+                closeAddStreamModal();
+            }
+        });
+        
+        // Initialize the app
+        loadSavedStreams();
+    </script>
+</body>
+</html>
