@@ -4,21 +4,11 @@
   "description": "Telegram bot that forwards images from URLs - Vercel deployment",
   "main": "api/bot.js",
   "scripts": {
-    "dev": "vercel dev",
-    "deploy": "vercel --prod"
-  },
-  "dependencies": {
-    "node-fetch": "^2.6.7"
+    "build": "echo 'No build needed'",
+    "start": "echo 'Serverless function'"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": "18.x"
   },
-  "keywords": [
-    "telegram",
-    "bot",
-    "vercel",
-    "serverless"
-  ],
-  "author": "Your Name",
   "license": "MIT"
 }
