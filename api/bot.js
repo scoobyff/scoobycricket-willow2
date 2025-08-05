@@ -1,5 +1,5 @@
 // api/bot.js
-const fetch = require('node-fetch');
+// Using built-in fetch (Node 18+) - no external dependencies needed
 
 // Bot configuration
 const BOT_TOKEN = '7773106747:AAG7vM6GazCa_AaTacRJ9SZSoUGEtAUsgQw';
